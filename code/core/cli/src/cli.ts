@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import arg from 'arg'
 import chalk from 'chalk'
 
@@ -174,26 +173,6 @@ const COMMAND_MAP = {
   //     await update()
   //   },
   // },
-
-  studio: {
-    shorthands: ['s'],
-    description: `Studio`,
-    flags: {
-      '--help': Boolean,
-      '--debug': Boolean,
-      '--verbose': Boolean,
-      '--remote': Boolean,
-      '--build': Boolean,
-    },
-    async run() {
-      const { _, ...flags } = arg(this.flags)
-      const { studio } = require('./studio')
-      const options = await getOptions({
-        debug: flags['--debug'] ? (flags['--verbose'] ? 'verbose' : true) : false,
-      })
-      await studio(options, flags['--remote'], flags['--build'])
-    },
-  },
 
   'update-template': {
     shorthands: ['ut'],

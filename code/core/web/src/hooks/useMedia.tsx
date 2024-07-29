@@ -1,13 +1,14 @@
 import { isServer, isWeb, useIsomorphicLayoutEffect } from '@tamagui/constants'
 import { useRef, useState, useSyncExternalStore } from 'react'
 
-import { getConfig } from '../config'
+import { getConfig, getSetting } from '../config'
 import { matchMedia } from '../helpers/matchMedia'
 import { pseudoDescriptors } from '../helpers/pseudoDescriptors'
 import type {
   ComponentContextI,
   DebugProp,
   IsMediaType,
+  LayoutEvent,
   MediaQueries,
   MediaQueryObject,
   MediaQueryState,
@@ -83,7 +84,8 @@ const dispose = new Set<Function>()
 let mediaVersion = 0
 
 export const configureMedia = (config: TamaguiInternalConfig) => {
-  const { media, mediaQueryDefaultActive } = config
+  const { media } = config
+  const mediaQueryDefaultActive = getSetting('mediaQueryDefaultActive')
   if (!media) return
   mediaVersion++
   for (const key in media) {
@@ -265,6 +267,7 @@ export function useMedia(
 
   return new Proxy(state, {
     get(_, key) {
+      if (disableMediaTouch) return
       if (typeof key === 'string') {
         componentState.keys ||= {}
         componentState.keys[key] = true
@@ -277,15 +280,38 @@ export function useMedia(
   })
 }
 
+let disableMediaTouch = false
+
+export function _dmt(val: boolean) {
+  disableMediaTouch = val
+}
+
+export function getMediaState(
+  mediaGroups: Set<string>,
+  layout: LayoutEvent['nativeEvent']['layout']
+) {
+  disableMediaTouch = true
+  let res: Record<string, boolean>
+  try {
+    res = Object.fromEntries(
+      [...mediaGroups].map((mediaKey) => {
+        return [mediaKey, mediaKeyMatch(mediaKey, layout as any)]
+      })
+    )
+  } finally {
+    disableMediaTouch = false
+  }
+  return res
+}
+
 export const getMediaImportanceIfMoreImportant = (
   mediaKey: string,
   key: string,
   importancesUsed: Record<string, number>,
   isSizeMedia: boolean
 ) => {
-  const conf = getConfig()
   const importance =
-    isSizeMedia && !conf.settings.mediaPropOrder
+    isSizeMedia && !getSetting('mediaPropOrder')
       ? getMediaKeyImportance(mediaKey)
       : defaultMediaImportance
   return !importancesUsed[key] || importance > importancesUsed[key] ? importance : null

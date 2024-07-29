@@ -1,4 +1,117 @@
-- RN transform type accepts string style props now but tamagui doesn't
+- bug: type `$platform-web` not working inside media query?
+
+/theme
+
+- "Share" button generates a short link tamagui.dev/theme/abcdefg
+- Randomize button for palettes
+- OG image of theme card (use the tree one we used for the list of themes in studio)
+
+---
+
+v2:
+
+  - @tamagui/cli => tamagui
+    - `tamagui build` document/announce
+    - `tamagui lint` fix check and document/announce
+  - tamagui => @tamagui/ui
+    - new Button, Input, Image, ScrollView
+    - note many are headless
+    - fullscreen => inset={0}
+  - @tamagui/core => @tamagui/style
+  - remove spacer / space
+  - group => container
+  - any tamagui component accepts a function callback to handle passing down styles:
+    - <View>{(props, style, state) => {}}</View>
+    - makes for easy interop, where asChild is more opaque
+    - sets disableClassName true
+  - remove the accumulation of styleProps in propMapper
+  - remove disableRootThemeClass from settings, change to disableRootThemeClassName
+  - defaults onlyAllowShorthands to true, themeClassNameOnRoot to true
+  - document input, image
+  - fix Select hover/type/performance
+  - remove deprecated
+  - document react 19 mode
+  - accessibility props, "focusable" => tabIndex
+  - make sure we make any changes for RSD / web alignment
+  - move to react native flex compat
+  - move to web compat apis
+  - no more `as const` needed (ts5)
+  - move settings into settings
+  - redo/remove ThemeableStack
+  - rename SizableStack to Surface and simplify a bit
+  - v2-3 ListItem simplification esp for performance of Select
+  - Button simplification
+  - remove suppressHighlighting / margin 0 default from Text
+  - AnimatePresence remove the old style variants in favor of custom
+  - disableInjectCSS should maybe just be automated better or defaulted on
+  - run over components and review for removing some assumptions about `size`
+
+---
+
+v3
+
+- html.div, styled('div')
+- plugins
+- zero runtime mode
+  - all functional styles pre-generate the styles across the possible tokens (if :number it uses SizeTokens, probably have to disallow string and '...' types but could have a way to define the values at build-time)
+
+  - createStyledContext upgrade
+
+```tsx
+import { apply } from '@tamagui/core'
+
+const Text = styled(Text, {
+  className: 'button',
+})
+
+const Icon = styled(Text, {
+  className: 'button',
+})
+
+const Apply = apply(Text, Icon)
+
+const Button = withStaticProperties(ButtonFrame, {
+  Apply,
+  Icon,
+  Text
+})
+
+const example = (
+  <Button>
+    <Button.Apply color="$color10">
+      {/* all of these 👇 get the styles from ^ */}
+      <Button.Text /> 
+      <Button.Text />
+      <Button.Text />
+      <Button.Icon $button-hover={{}} />
+    </Button.Apply>
+  </Button>
+)
+```
+
+
+
+---
+
+- config v4
+
+  - can pass in colors
+  - remove: shouldAddPrefersColorThemes, themeClassNameOnRoot
+  - no custom fonts just defaults for each platform
+  - focus styles in the default v3 config are kind of wack
+  - automatically handles tree shaking process.env for themes
+
+---
+
+- can we remove the need for separate Text/View?
+    - seems like we could scan just the direct descendents?
+    https://github.com/facebook/react-strict-dom/blob/429e2fe1cb9370c59378d9ba1f4a40676bef7555/packages/react-strict-dom/src/native/modules/createStrictDOMComponent.js#L529
+
+- AnimatePresence refactor:
+  - https://x.com/mattgperry/status/1816842995758498017?s=46&t=5wFlU_OsfjJ0sQPMFbtG0A
+
+- className merging in variants!
+  - `positionSticky: { true: { className: 'position-sticky' } }`
 - opacity `/50`
 - AnimateList
   - like AnimatePresence but for >1 items
@@ -12,7 +125,6 @@
 
 - popover transform origin
   - https://codesandbox.io/p/sandbox/floating-ui-react-scale-transform-origin-qv0t1c?file=%2Fsrc%2FApp.tsx%3A43%2C25
-- v2 - boxShadow
 - Setting default props for any style in a parent (variables dynamic / themes dynamic down the tree)
 
 Nate:
@@ -22,14 +134,10 @@ Nate:
 ---
 
 - data-disable-theme is being passed down on web snapshots
-
-- 2.0 = redo/remove ThemeableStack
-- v3 themes: all of the focus styles in the default v3 config are kind of wack
 - activeTheme props for all components
 - in dev mode if no checkbox indicator, warn
   - checkbox should have a default indicator probably with a simple svg check we inline
 - move from useMedia match.addListener to addEventListener
-- 2.0 = TS 5 recent version support raise - no more `as const` needed
 - media query height taking into account the "safe height" is important
 - https://linear.app/uniswap/issue/EXT-925/tamagui-error-breaking-the-extension
 - document Popover.Anchor
@@ -38,18 +146,8 @@ Nate:
 
 ---
 
-Tentpole projects:
-
-- Marketplace
-- Studio launch
-- Storybook/hosted docs
-- Takeout 2 / vxrn/stack
-
-Needed features/maintenance:
-
 - ( Pending PRs ) RSD / web alignment
   - follow what RSD is doing + dont go beyond native support eg aspect-ratio
-  - deprecate accessibility props, "focusable" => tabIndex
   - simple version is good
   - lower priority - em/rem, other nice web styles that rsd/tailwind has
 - RSC support
@@ -58,7 +156,6 @@ Needed features/maintenance:
 - v2 / headless
 
   - ( Pending PR ) deprecate some createTamagui settings that should move into settings
-    - disableSSR => settings.disableSSR
   - ListItem/Button simplify APIs
   - ( Pending PR ) Image/Input deprecations for web alignment
 
@@ -66,12 +163,6 @@ Needed features/maintenance:
 - 0-runtime mode
 - @tamagui/kit - includes native versions of many things
 - remove RNW - Input, Image
-
-Ongoing work:
-
-- Takeout
-- Bento
-- Core
 
 ---
 
@@ -92,8 +183,6 @@ Ongoing work:
   - "auto" too
 
 - Adapt needs public API to support any adaptation
-
-- v2-3 ListItem simplification esp for performance of Select
 
 - Select Virtualization
 
@@ -127,11 +216,8 @@ Ongoing work:
 
 - compiler - no need to setup any separate package
 
-- 2.0 rename SizableStack to Surface and simplify a bit
-
 - Remove the need for Text
 
-- document the t_unmounted / SSR
 - popovers work with no js
 
 - TODO
@@ -333,22 +419,6 @@ Maintenance:
 
 ---
 
-V2:
-
-- breaking:
-  - shorthands
-    - col => c
-    - remove bg/bc confusion
-  - remove suppressHighlighting / margin 0 default from Text
-  - compiler can accumulate them and emit a file?
-- basic plugins system
-- no separate UI package necessary for optimization
-- if dynamic eval flattens every usage, remove the definition
-- headless
-- zero runtime
-
----
-
 # Backlog
 
 - move simple-web to themeBuilder
@@ -388,12 +458,10 @@ V2:
 
 - Switch unstyled - make it so it doesn't do any theme stuff
 
-- font-family is being output to DOM on text element
 - font weights in css are generating extra variables with "undefined" value if not filled in
 - add defaultSize and defaultFontFamily to createTamagui
 
   - all instances of $true can become getConfig().defaultSize
-  - all instances of $body can become getConfig().defaultFontFamily
   - remove the validation in createTamagui that enforces the keys
 
 - relative sizing first class (and relative color)

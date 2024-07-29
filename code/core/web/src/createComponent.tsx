@@ -1,5 +1,5 @@
 import { composeRefs } from '@tamagui/compose-refs'
-import { isClient, isServer, isWeb } from '@tamagui/constants'
+import { isClient, isServer, isWeb, useIsomorphicLayoutEffect } from '@tamagui/constants'
 import {
   StyleObjectIdentifier,
   StyleObjectRules,
@@ -41,7 +41,12 @@ import { mergeProps } from './helpers/mergeProps'
 import { setElementProps } from './helpers/setElementProps'
 import { themeable } from './helpers/themeable'
 import { useDidHydrateOnce } from './hooks/useDidHydrateOnce'
-import { mediaKeyMatch, setMediaShouldUpdate, useMedia } from './hooks/useMedia'
+import {
+  getMediaState,
+  mediaKeyMatch,
+  setMediaShouldUpdate,
+  useMedia,
+} from './hooks/useMedia'
 import { useThemeWithState } from './hooks/useTheme'
 import type { TamaguiComponentEvents } from './interfaces/TamaguiComponentEvents'
 import type { TamaguiComponentState } from './interfaces/TamaguiComponentState'
@@ -296,30 +301,14 @@ export const useComponentState = (
     const isAnimatedAndHydrated =
       isAnimated && !supportsCSSVars && didHydrateOnce && !isServer
 
+    const isClassNameDisabled =
+      !staticConfig.acceptsClassName && (config.disableSSR || didHydrateOnce)
+
     const isDisabledManually =
       disableClassName && !isServer && didHydrateOnce && state.unmounted === true
 
-    if (isAnimatedAndHydrated || isDisabledManually) {
+    if (isAnimatedAndHydrated || isDisabledManually || isClassNameDisabled) {
       shouldAvoidClasses = true
-
-      // debug
-      if (process.env.NODE_ENV === 'development' && props.debug) {
-        console.info(
-          `❌⛹️ no className`,
-          {
-            isAnimatedAndHydrated,
-            isDisabledManually,
-          },
-          {
-            isAnimated,
-            supportsCSSVars,
-            didHydrateOnce,
-            disableClassName,
-            isServer,
-            willBeAnimated,
-          }
-        )
-      }
     }
   }
 
@@ -695,26 +684,27 @@ export function createComponent<
           '[Unnamed Component]'
         }`
         const type =
-          (hasEnterStyle ? '(hasEnter)' : '') +
-          (isAnimated ? '(animated)' : '') +
-          (isReactNative ? '(rnw)' : '') +
+          (hasEnterStyle ? '(hasEnter)' : ' ') +
+          (isAnimated ? '(animated)' : ' ') +
+          (isReactNative ? '(rnw)' : ' ') +
+          (shouldAvoidClasses ? '(shouldAvoidClasses)' : ' ') +
+          (state.press || state.pressIn ? '(PRESSED)' : ' ') +
+          (state.hover ? '(HOVERED)' : ' ') +
+          (state.focus ? '(FOCUSED)' : ' ') +
           (presenceState?.isPresent === false ? '(EXIT)' : '')
+
         const dataIs = propsIn['data-is'] || ''
         const banner = `${internalID} ${name}${dataIs ? ` ${dataIs}` : ''} ${type}`
         console.info(
           `%c ${banner} (hydrated: ${isHydrated}) (unmounted: ${state.unmounted})`,
           'background: green; color: white;'
         )
+
         if (isServer) {
           log({ noClassNames, isAnimated, shouldAvoidClasses, isWeb, supportsCSSVars })
         } else {
           // if strict mode or something messes with our nesting this fixes:
           console.groupEnd()
-
-          const pressLog = `${state.press || state.pressIn ? ' PRESS ' : ''}`
-          const stateLog = `${pressLog}${state.hover ? ' HOVER ' : ''}${
-            state.focus ? ' FOCUS' : ' '
-          }`
 
           const ch = propsIn.children
           let childLog =
@@ -723,7 +713,7 @@ export function createComponent<
             childLog = `(children: ${childLog})`
           }
 
-          console.groupCollapsed(`${childLog}${stateLog}Props:`)
+          console.groupCollapsed(`${childLog} Props:`)
           log('props in:', propsIn)
           log('final props:', props)
           log({ state, staticConfig, elementType, themeStateProps })
@@ -844,9 +834,6 @@ export function createComponent<
       // @ts-ignore  for next/link compat etc
       onClick,
       theme: _themeProp,
-      // @ts-ignore
-      defaultVariants,
-
       ...nonTamaguiProps
     } = viewPropsIn
 
@@ -890,6 +877,9 @@ export function createComponent<
       if ((isAnimated || supportsCSSVars) && animations) {
         animationStyles = animations.style
         viewProps.style = animationStyles
+        if (animations.className) {
+          viewProps.className = `${viewProps.className || ''} ${animations.className}`
+        }
       }
 
       if (process.env.NODE_ENV === 'development' && time) time`animations`
@@ -963,6 +953,16 @@ export function createComponent<
     const { pseudoGroups, mediaGroups } = splitStyles
 
     const unPress = () => setStateShallow({ press: false, pressIn: false })
+
+    if (process.env.NODE_ENV === 'development' && isWeb) {
+      useIsomorphicLayoutEffect(() => {
+        if (debugProp) {
+          console.groupCollapsed(`Rendered style >`)
+          console.warn(getComputedStyle(stateRef.current.host! as any))
+          console.groupEnd()
+        }
+      })
+    }
 
     useEffect(() => {
       if (disabled) {
@@ -1048,6 +1048,20 @@ export function createComponent<
     const needsPressState = Boolean(groupName || runtimePressStyle)
 
     if (process.env.NODE_ENV === 'development' && time) time`events-setup`
+
+    if (process.env.NODE_ENV === 'development' && debugProp === 'verbose') {
+      log(`🪩 events()`, {
+        runtimeFocusStyle,
+        runtimePressStyle,
+        runtimeHoverStyle,
+        runtimeFocusVisibleStyle,
+        attachPress,
+        attachFocus,
+        attachHover,
+        shouldAttach,
+        needsHoverState,
+      })
+    }
 
     const events: TamaguiComponentEvents | null = shouldAttach
       ? {
@@ -1336,7 +1350,7 @@ export function createComponent<
     }
 
     // add in <style> tags inline
-    if (process.env.TAMAGUI_REACT_19) {
+    if (process.env.TAMAGUI_REACT_19 && process.env.TAMAGUI_TARGET !== 'native') {
       const { rulesToInsert } = splitStyles
       const keys = Object.keys(splitStyles.rulesToInsert)
       if (keys.length) {
@@ -1731,17 +1745,6 @@ function hasAnimatedStyleValue(style: Object) {
     const val = style[k]
     return val && typeof val === 'object' && '_animation' in val
   })
-}
-
-function getMediaState(
-  mediaGroups: Set<string>,
-  layout: LayoutEvent['nativeEvent']['layout']
-) {
-  return Object.fromEntries(
-    [...mediaGroups].map((mediaKey) => {
-      return [mediaKey, mediaKeyMatch(mediaKey, layout as any)]
-    })
-  )
 }
 
 const fromPx = (val?: number | string) =>

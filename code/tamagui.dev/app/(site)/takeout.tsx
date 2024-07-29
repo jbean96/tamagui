@@ -184,13 +184,13 @@ export default function TakeoutPage() {
         <YStack h={0} mah={0}>
           <YStack position="absolute" t={30} r="2%">
             <PurchaseButton
-              icon={ShoppingCart}
+              // icon={ShoppingCart}
               onPress={() => {
                 store.showPurchase = true
               }}
               size="$4"
             >
-              $149
+              Purchase
             </PurchaseButton>
           </YStack>
 
@@ -229,27 +229,25 @@ export default function TakeoutPage() {
               <FeaturesIconRow />
 
               <ThemeTintAlt>
-                <Paragraph className="text-wrap-balance" size="$7" $sm={{ size: '$7' }}>
-                  Takeout is how we fund development of the OSS Tamagui libraries. It
-                  takes a fork of our free and OSS starter kit and brings it to a nice
-                  starting point for a variety of user-based apps.
+                <Paragraph
+                  fow="bold"
+                  ff="$munro"
+                  ls={5}
+                  className="text-wrap-balance"
+                  size="$10"
+                  color="$color11"
+                  $sm={{ size: '$7' }}
+                >
+                  A starter for user-based apps across all platforms.
                 </Paragraph>
 
                 <Paragraph className="text-wrap-balance" size="$7" $sm={{ size: '$7' }}>
-                  We recommend you try the free starter first to see if you like the base:{' '}
-                  <CodeInline>npm&nbsp;create&nbsp;tamagui</CodeInline>. Takeout combines
-                  React, React Native, Next.js, Expo, Supabase, and more in a monorepo and
-                  requires some knowledge of each.
-                </Paragraph>
-
-                <Paragraph className="text-wrap-balance" size="$6">
-                  We added{' '}
-                  <a target="_blank" href="https://supabase.com" rel="noreferrer">
-                    Supabase
-                  </a>{' '}
-                  for auth, data and storage, Zod for validation, tRPC for APIs, a full
-                  user system with profiles, account, settings, and example screens. The
-                  repo also comes with scripts for setting up typed fonts and icons from{' '}
+                  Takeout is a production-ready stack for any user-based app. It shares a
+                  large percent of code between native and web, while maintaining a high
+                  bar for UX and performance. It's builds off our OSS starter (
+                  <CodeInline>npm create tamagui</CodeInline>) with React, React Native,
+                  Next.js, Expo, Supabase, tRPC, Zod, and more. Plus custom themes,
+                  screens, user features, and typed, themeable fonts and icons from{' '}
                   <Link href="https://fonts.google.com" target="_blank">
                     Google Fonts
                   </Link>{' '}
@@ -268,7 +266,7 @@ export default function TakeoutPage() {
                   title="Monorepo"
                   icon="retro-icons/coding-apps-websites-module-21.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.monorepo.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -285,7 +283,7 @@ export default function TakeoutPage() {
                   title="Design"
                   icon="retro-icons/design-color-painting-palette-25.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.design.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -302,7 +300,7 @@ export default function TakeoutPage() {
                   title="Deploy"
                   icon="retro-icons/computers-devices-electronics-vintage-mac-54.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.deploy.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -319,7 +317,7 @@ export default function TakeoutPage() {
                   title="Screens"
                   icon="retro-icons/coding-app-website-ui-62.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.screens.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -336,7 +334,7 @@ export default function TakeoutPage() {
                   title="Assets"
                   icon="retro-icons/coding-apps-websites-plugin-33.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.assets.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -353,7 +351,7 @@ export default function TakeoutPage() {
                   title="& More"
                   icon="retro-icons/coding-apps-websites-programming-hold-code-9.svg"
                 >
-                  <YStack space="$2">
+                  <YStack gap="$2">
                     {points.more.map((point, idx, arr) => (
                       <Point
                         key={point}
@@ -705,7 +703,7 @@ const CodeInline = styled(Paragraph, {
 const points = {
   // this one's only shown on modal
   monorepo: [
-    'Well-isolated configuration.',
+    'Builds off our free and OSS starter kit.',
     'Nearly all code shared between web and native.',
     'Guided setup script, easily generate common patterns.',
   ],
@@ -1485,7 +1483,7 @@ const Points = () => (
 )
 
 const HeartsRow = () => (
-  <XStack space="$12" my="$4" als="center" spaceDirection="horizontal">
+  <XStack gap="$12" my="$4" als="center" spaceDirection="horizontal">
     <img src="/heart.svg" style={{ width: 16, height: 16 }} />
     <img src="/heart.svg" style={{ width: 16, height: 16 }} />
     <img src="/heart.svg" style={{ width: 16, height: 16 }} />

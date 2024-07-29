@@ -72,6 +72,8 @@ import { pseudoDescriptors, pseudoPriorities } from './pseudoDescriptors'
 import { skipProps } from './skipProps'
 import { transformsToString } from './transformsToString'
 
+const consoleGroupCollapsed = isWeb ? console.groupCollapsed : console.info
+
 export type SplitStyles = ReturnType<typeof getSplitStyles>
 
 export type SplitStyleResult = ReturnType<typeof getSplitStyles>
@@ -218,12 +220,13 @@ export const getSplitStyles: StyleSplitter = (
     debug !== 'profile' &&
     isClient
   ) {
-    console.groupCollapsed('getSplitStyles (collapsed)')
+    consoleGroupCollapsed('getSplitStyles (collapsed)')
     log({
       props,
       staticConfig,
       shouldDoClasses,
       styleProps,
+      rulesToInsert,
       componentState,
       styleState,
       theme: { ...theme },
@@ -535,7 +538,7 @@ export const getSplitStyles: StyleSplitter = (
     if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
       console.groupEnd() // react native was not nesting right
       console.groupEnd() // react native was not nesting right
-      console.groupCollapsed(
+      consoleGroupCollapsed(
         `  🔑 ${keyOg}${keyInit !== keyOg ? ` (shorthand for ${keyInit})` : ''} ${
           shouldPassThrough ? '(pass)' : ''
         }`
@@ -619,7 +622,7 @@ export const getSplitStyles: StyleSplitter = (
     }
 
     if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
-      console.groupCollapsed('  💠 expanded', keyInit, valInit)
+      consoleGroupCollapsed('  💠 expanded', keyInit, valInit)
       try {
         if (!isServer && isDevTools) {
           log({
@@ -630,7 +633,6 @@ export const getSplitStyles: StyleSplitter = (
             variant: variants?.[keyInit],
             shouldPassProp,
             isHOCShouldPassThrough,
-            theme,
             usedKeys: { ...usedKeys },
             curProps: { ...styleState.curProps },
           })
@@ -681,7 +683,7 @@ export const getSplitStyles: StyleSplitter = (
       if (shouldPassThrough) {
         passDownProp(viewProps, key, val, isMediaOrPseudo)
         if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
-          console.groupCollapsed(` - passing down prop ${key}`)
+          consoleGroupCollapsed(` - passing down prop ${key}`)
           log({ val, after: { ...viewProps[key] } })
           console.groupEnd()
         }
@@ -724,7 +726,7 @@ export const getSplitStyles: StyleSplitter = (
 
           if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
             // prettier-ignore
-            console.groupCollapsed('pseudo (classes)', key)
+            consoleGroupCollapsed('pseudo (classes)', key)
 
             log({ pseudoStyleObject, pseudoStyles })
             console.groupEnd()
@@ -763,7 +765,7 @@ export const getSplitStyles: StyleSplitter = (
           }
 
           if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
-            console.groupCollapsed('pseudo', key, { isDisabled })
+            consoleGroupCollapsed('pseudo', key, { isDisabled })
             log({ pseudoStyleObject, isDisabled, descriptor, componentState })
             console.groupEnd()
           }
@@ -952,7 +954,7 @@ export const getSplitStyles: StyleSplitter = (
             const groupContext = context?.groups.state[groupName]
             if (!groupContext) {
               if (process.env.NODE_ENV === 'development' && debug) {
-                console.warn(`No parent with group prop, skipping styles: ${groupName}`)
+                log(`No parent with group prop, skipping styles: ${groupName}`)
               }
               continue
             }
@@ -970,6 +972,9 @@ export const getSplitStyles: StyleSplitter = (
               if (!mediaState && groupContext.layout) {
                 isActive = mediaKeyMatch(groupMediaKey, groupContext.layout)
               }
+              if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
+                log(` 🏘️ GROUP media ${groupMediaKey} active? ${isActive}`)
+              }
               if (!isActive) continue
               importanceBump = 2
             }
@@ -983,8 +988,13 @@ export const getSplitStyles: StyleSplitter = (
                 context.groups.state[groupName]
               ).pseudo
               const isActive = componentGroupPseudoState?.[groupPseudoKey]
-              if (!isActive) continue
               const priority = pseudoPriorities[groupPseudoKey]
+              if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
+                log(
+                  ` 🏘️ GROUP pseudo ${groupMediaKey} active? ${isActive}, priority ${priority}`
+                )
+              }
+              if (!isActive) continue
               importanceBump = priority
             }
           }
@@ -1002,7 +1012,8 @@ export const getSplitStyles: StyleSplitter = (
               mediaStyle[subKey],
               usedKeys,
               mediaState[mediaKeyShort],
-              importanceBump
+              importanceBump,
+              debug
             )
             if (key === 'fontFamily') {
               styleState.fontFamily = mediaStyle.fontFamily as string
@@ -1157,7 +1168,7 @@ export const getSplitStyles: StyleSplitter = (
 
         if (process.env.NODE_ENV === 'development' && props.debug === 'verbose') {
           console.groupEnd() // ensure group ended from loop above
-          console.groupCollapsed(`🔹 getSplitStyles final style object`)
+          consoleGroupCollapsed(`🔹 getSplitStyles final style object`)
           console.info(styleState.style)
           console.groupEnd()
         }
@@ -1171,7 +1182,7 @@ export const getSplitStyles: StyleSplitter = (
         for (const namespace in transforms) {
           if (!transforms[namespace]) {
             if (process.env.NODE_ENV === 'development') {
-              console.warn('Error no transform', transforms, namespace)
+              log('Error no transform', transforms, namespace)
             }
             continue
           }
@@ -1192,7 +1203,11 @@ export const getSplitStyles: StyleSplitter = (
       }
     }
 
-    if (!isReactNative) {
+    if (isReactNative) {
+      if (viewProps.tabIndex === 0) {
+        viewProps.accessible ??= true
+      }
+    } else {
       if (viewProps.tabIndex == null) {
         const isFocusable = viewProps.focusable ?? viewProps.accessible
 
@@ -1364,7 +1379,7 @@ export const getSplitStyles: StyleSplitter = (
 
   if (process.env.NODE_ENV === 'development' && debug === 'verbose') {
     if (isDevTools) {
-      console.groupCollapsed('🔹 getSplitStyles ===>')
+      consoleGroupCollapsed('🔹 getSplitStyles ===>')
       try {
         // prettier-ignore
         const logs = {
@@ -1595,7 +1610,8 @@ function mergeMediaByImportance(
   value: any,
   importancesUsed: Record<string, number>,
   isSizeMedia: boolean,
-  importanceBump?: number
+  importanceBump?: number,
+  debugProp?: DebugProp
 ) {
   let importance = getMediaImportanceIfMoreImportant(
     mediaKey,
@@ -1606,11 +1622,30 @@ function mergeMediaByImportance(
   if (importanceBump) {
     importance = (importance || 0) + importanceBump
   }
+  if (process.env.NODE_ENV === 'development' && debugProp === 'verbose') {
+    log(
+      `mergeMediaByImportance ${key} importance existing ${importancesUsed[key]} next ${importance}`
+    )
+  }
   if (importance === null) {
     return false
   }
   importancesUsed[key] = importance
-  mergeStyle(styleState, key, value)
+
+  if (key in pseudoDescriptors) {
+    const descriptor = pseudoDescriptors[key]
+    const descriptorKey = descriptor.stateKey || descriptor.name
+    const isDisabled = styleState.componentState[descriptorKey] === false
+    if (isDisabled) {
+      return false
+    }
+    for (const subKey in value) {
+      mergeStyle(styleState, subKey, value[subKey])
+    }
+  } else {
+    mergeStyle(styleState, key, value)
+  }
+
   return true
 }
 

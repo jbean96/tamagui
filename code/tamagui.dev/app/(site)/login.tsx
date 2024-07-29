@@ -33,7 +33,7 @@ function SignIn() {
     content: '',
   })
   const { data } = useUser()
-  const user = data?.session?.user
+  const user = data?.user
   const emailRef = useRef(null)
 
   useEffect(() => {
@@ -142,7 +142,7 @@ function SignIn() {
               <YStack>
                 {!showPasswordInput && (
                   <form onSubmit={handleSignin}>
-                    <YStack space="$3">
+                    <YStack gap="$3">
                       <Input
                         autoComplete="email"
                         inputMode="email"
@@ -168,7 +168,7 @@ function SignIn() {
 
                 {showPasswordInput && (
                   <form onSubmit={handleSignin}>
-                    <YStack space="$2">
+                    <YStack gap="$2">
                       <Input
                         autoComplete="email"
                         placeholder="Email"
@@ -222,7 +222,7 @@ function SignIn() {
               </YStack>
             </>
           )}
-          {/* <YStack space="$2" >
+          {/* <YStack gap="$2" >
             <Paragraph
               tag="button"
               ta="center"

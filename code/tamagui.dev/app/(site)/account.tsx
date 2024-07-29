@@ -41,11 +41,7 @@ const Account = () => {
     return <Spinner my="$10" />
   }
 
-  const {
-    userDetails,
-    session: { user },
-    teams,
-  } = data
+  const { userDetails, user, teams } = data
 
   return (
     <Container gap="$4" f={1}>
@@ -76,7 +72,7 @@ const Account = () => {
             </YStack>
           </XStack>
 
-          <YStack space="$2">
+          <YStack gap="$2">
             {teams.personal?.is_active && <SponsorBadge />}
             {teams.orgs
               ?.filter((team) => team.is_active)
@@ -146,19 +142,19 @@ const TeamBadge = ({
 
 const UserSettings = () => {
   return (
-    <YStack space="$8" separator={<Separator />}>
-      <YStack space="$6" id="profile"></YStack>
+    <YStack gap="$8" separator={<Separator />}>
+      <YStack gap="$6" id="profile"></YStack>
 
-      {/* <YStack space="$6" id="studio-queue">
+      {/* <YStack gap="$6" id="studio-queue">
         <QueueContent />
       </YStack> */}
 
-      <YStack space="$6" id="sponsorship-status">
+      <YStack gap="$6" id="sponsorship-status">
         <SizableText size="$8">Sponsorship Status</SizableText>
         <SponsorshipContent />
       </YStack>
 
-      <YStack space="$6" id="connections">
+      <YStack gap="$6" id="connections">
         <SizableText size="$8">Connections</SizableText>
         <ConnectionsContent />
       </YStack>
@@ -245,7 +241,7 @@ const SponsorshipContent = () => {
 
   if (!teams.main?.is_active) {
     return (
-      <YStack space="$4" ai="flex-start">
+      <YStack gap="$4" ai="flex-start">
         <SponsorButton />
         <YStack space>
           <Paragraph size="$6">
@@ -324,9 +320,6 @@ const GithubConnection = () => {
   const { data } = useUser()
   if (!data) return null
   const connectedGithub = data.connections.github
-  const {
-    session: { user },
-  } = data
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type?: string; content?: string }>({
