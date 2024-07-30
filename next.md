@@ -13,6 +13,8 @@ v2:
   - @tamagui/cli => tamagui
     - `tamagui build` document/announce
     - `tamagui lint` fix check and document/announce
+  - remove deprecated styled acceptsClassName
+  - deprecrate and remove mediaPropOrder
   - tamagui => @tamagui/ui
     - new Button, Input, Image, ScrollView
     - note many are headless
